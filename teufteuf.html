@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Teuf-Teuf</title>
+<style>
+  :root {
+    --sea: #3fa7d6;
+    --sea-dark: #2a86b3;
+    --ink: #17324d;
+    --sun: #ffd166;
+    --red: #e63946;
+    --green: #2a9d8f;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #eaf6fb;
+    color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 16px 24px;
+    user-select: none; -webkit-user-select: none;
+    overscroll-behavior: none;
+  }
+  header {
+    width: 100%; max-width: 480px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  h1 { font-size: 30px; margin: 0; letter-spacing: 0.5px; }
+  button {
+    font: inherit; border: 0; border-radius: 999px; cursor: pointer;
+    padding: 12px 20px; font-size: 18px; font-weight: 700;
+  }
+  #connect { background: var(--green); color: #fff; box-shadow: 0 4px 0 #1d7065; }
+  #connect:active { transform: translateY(2px); box-shadow: 0 2px 0 #1d7065; }
+  #connect.on { background: #cfe9e5; color: #1d7065; box-shadow: none; }
+  #status { min-height: 22px; margin: 6px 0 10px; font-size: 15px; opacity: 0.75; text-align: center; }
+
+  .sea {
+    width: 100%; max-width: 480px; aspect-ratio: 1 / 1; max-height: 42vh;
+    border-radius: 28px; overflow: hidden; background: var(--sea);
+    box-shadow: inset 0 0 0 6px var(--sea-dark);
+  }
+  .sea svg { width: 100%; height: 100%; display: block; }
+  #waves { animation: sail 1.6s linear infinite; }
+  .moving #waves { animation-duration: 1.1s; }
+  @keyframes sail { from { transform: translateY(0); } to { transform: translateY(60px); } }
+  .wake { animation: wake 0.9s ease-in-out infinite alternate; }
+  @keyframes wake { from { opacity: 0.35; } to { opacity: 0.8; } }
+  #boat, #rudder { transition: transform 0.12s linear; }
+
+  .wheel-wrap { width: 100%; max-width: min(300px, 36vh); margin-top: 14px; touch-action: none; }
+  #wheel { width: 100%; display: block; touch-action: none; cursor: grab; }
+
+  .row {
+    width: 100%; max-width: 480px; margin-top: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  #straight { background: var(--sun); color: var(--ink); box-shadow: 0 4px 0 #d9a93c; }
+  #straight:active { transform: translateY(2px); box-shadow: 0 2px 0 #d9a93c; }
+  label { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+  label input { width: 22px; height: 22px; accent-color: var(--green); }
+  #sleep { margin-top: 18px; background: transparent; color: var(--ink); opacity: 0.55; font-size: 15px; padding: 8px 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Teuf-Teuf</h1>
+  <button id="connect">Connecter</button>
+</header>
+<div id="status">Appuie sur Connecter, puis choisis XIAO-Servo</div>
+
+<div class="sea" id="sea">
+  <svg viewBox="0 0 300 300" aria-label="Bateau de course">
+    <defs>
+      <pattern id="wavePat" width="60" height="60" patternUnits="userSpaceOnUse">
+        <path d="M8 20 q8 -7 16 0 q8 7 16 0" stroke="#fff" stroke-opacity="0.35" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M38 50 q6 -5 12 0 q6 5 12 0" stroke="#fff" stroke-opacity="0.25" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </pattern>
+    </defs>
+    <rect id="waves" x="0" y="-60" width="300" height="420" fill="url(#wavePat)"/>
+
+    <g id="boat" style="transform-origin: 150px 160px">
+      <!-- wake -->
+      <path class="wake" d="M128 252 L100 300 M172 252 L200 300" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <path class="wake" d="M140 258 L132 300 M160 258 L168 300" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" style="animation-delay:.3s"/>
+      <!-- rudder -->
+      <g id="rudder" style="transform-origin: 150px 246px">
+        <rect x="146" y="246" width="8" height="22" rx="4" fill="#33415c"/>
+      </g>
+      <!-- engine -->
+      <rect x="136" y="232" width="28" height="18" rx="5" fill="#33415c"/>
+      <!-- hull -->
+      <path d="M150 52 C178 84 188 128 188 196 L188 228 Q188 240 176 240 L124 240 Q112 240 112 228 L112 196 C112 128 122 84 150 52 Z" fill="var(--red)" stroke="#a4161a" stroke-width="3"/>
+      <!-- racing stripes -->
+      <path d="M140 70 C130 110 128 160 128 236 M160 70 C170 110 172 160 172 236" stroke="#fff" stroke-width="5" fill="none"/>
+      <!-- number -->
+      <circle cx="150" cy="115" r="17" fill="#fff"/>
+      <text x="150" y="122" text-anchor="middle" font-size="20" font-weight="800" fill="var(--ink)" font-family="system-ui, sans-serif">7</text>
+      <!-- windshield + cockpit -->
+      <path d="M126 152 Q150 138 174 152" stroke="#bde0fe" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <rect x="130" y="156" width="40" height="52" rx="14" fill="#17324d"/>
+      <!-- driver helmet -->
+      <circle cx="150" cy="176" r="11" fill="var(--sun)"/>
+      <rect x="143" y="168" width="14" height="5" rx="2.5" fill="#17324d" opacity="0.7"/>
+    </g>
+  </svg>
+</div>
+
+<div class="wheel-wrap">
+  <svg id="wheel" viewBox="0 0 200 200" aria-label="Volant">
+    <g id="wheelG" style="transform-origin: 100px 100px">
+      <g stroke="#8d5524" stroke-width="10" stroke-linecap="round">
+        <line x1="100" y1="100" x2="100" y2="14"/>
+        <line x1="100" y1="100" x2="100" y2="186"/>
+        <line x1="100" y1="100" x2="14" y2="100"/>
+        <line x1="100" y1="100" x2="186" y2="100"/>
+        <line x1="100" y1="100" x2="39" y2="39"/>
+        <line x1="100" y1="100" x2="161" y2="39"/>
+        <line x1="100" y1="100" x2="39" y2="161"/>
+        <line x1="100" y1="100" x2="161" y2="161"/>
+      </g>
+      <circle cx="100" cy="100" r="72" fill="none" stroke="#c68642" stroke-width="18"/>
+      <circle cx="100" cy="100" r="72" fill="none" stroke="#8d5524" stroke-width="2"/>
+      <circle cx="100" cy="100" r="22" fill="#c68642" stroke="#8d5524" stroke-width="4"/>
+      <circle cx="100" cy="100" r="8" fill="var(--sun)"/>
+      <!-- top marker so kids see which way it's turned -->
+      <circle cx="100" cy="20" r="10" fill="var(--red)" stroke="#fff" stroke-width="3"/>
+    </g>
+  </svg>
+</div>
+
+<div class="row">
+  <button id="straight">Tout droit</button>
+  <label><input type="checkbox" id="autocenter" checked> Retour au centre</label>
+</div>
+
+<button id="sleep">Endormir le bateau</button>
+
+<script>
+// ---------- Settings ----------
+const CENTER    = 90;   // servo angle when going straight
+const RANGE     = 60;   // max degrees left/right from CENTER
+const REVERSE   = false; // true if the boat turns the wrong way
+const WHEEL_MAX = 135;  // how far the wheel turns each way (degrees)
+// ------------------------------
+
+const NUS = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), connectBtn = $('connect');
+
+let device = null, rx = null;
+let wheel = 0;            // current wheel angle, -WHEEL_MAX..WHEEL_MAX
+let lastSent = null, pending = null, busy = false;
+
+function setStatus(t) { statusEl.textContent = t; }
+
+// ---------- Bluetooth ----------
+async function connect() {
+  if (!navigator.bluetooth) {
+    setStatus('Ouvre cette page dans l’app Bluefy pour utiliser le Bluetooth');
+    return;
+  }
+  try {
+    if (!device) {
+      device = await navigator.bluetooth.requestDevice({ filters: [{ services: [NUS] }] });
+      device.addEventListener('gattserverdisconnected', onDisconnect);
+    }
+    setStatus('Connexion…');
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(NUS);
+    rx = await svc.getCharacteristic(RX);
+    connectBtn.textContent = 'Connecté';
+    connectBtn.classList.add('on');
+    setStatus('Prêt ! Tourne le volant');
+    lastSent = null;
+    update();
+  } catch (e) {
+    setStatus('Connexion impossible : ' + (e.message || e));
+  }
+}
+
+function onDisconnect() {
+  rx = null;
+  connectBtn.textContent = 'Connecter';
+  connectBtn.classList.remove('on');
+  setStatus('Bateau déconnecté. Appuie sur Connecter');
+}
+
+async function write(text) {
+  const data = new TextEncoder().encode(text);
+  if (rx.writeValueWithoutResponse) await rx.writeValueWithoutResponse(data);
+  else await rx.writeValue(data);
+}
+
+// Send only the latest value, one write at a time
+async function pump() {
+  if (busy) return;
+  busy = true;
+  while (pending !== null && rx) {
+    const v = pending; pending = null;
+    try { await write(v); } catch (e) { /* drop and keep going */ }
+    await new Promise(r => setTimeout(r, 40));
+  }
+  busy = false;
+}
+
+function send(text) {
+  if (!rx) return;
+  pending = text;
+  pump();
+}
+
+// ---------- Steering ----------
+function update() {
+  const steer = wheel / WHEEL_MAX;                 // -1 (left) .. 1 (right)
+  $('wheelG').style.transform = `rotate(${wheel}deg)`;
+  $('boat').style.transform   = `rotate(${steer * 25}deg)`;
+  $('rudder').style.transform = `rotate(${-steer * 35}deg)`;
+  $('sea').classList.toggle('moving', Math.abs(steer) > 0.05);
+
+  const angle = Math.round(CENTER + (REVERSE ? -1 : 1) * steer * RANGE);
+  if (angle !== lastSent) { lastSent = angle; send(String(angle)); }
+}
+
+function setWheel(v) {
+  wheel = Math.max(-WHEEL_MAX, Math.min(WHEEL_MAX, v));
+  update();
+}
+
+let springAnim = null;
+function springBack() {
+  cancelAnimationFrame(springAnim);
+  const step = () => {
+    if (Math.abs(wheel) < 1) { setWheel(0); return; }
+    setWheel(wheel * 0.8);
+    springAnim = requestAnimationFrame(step);
+  };
+  step();
+}
+
+const wheelEl = $('wheel');
+let dragging = false, lastPointerAngle = 0;
+
+function pointerAngle(e) {
+  const r = wheelEl.getBoundingClientRect();
+  return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+}
+
+wheelEl.addEventListener('pointerdown', e => {
+  cancelAnimationFrame(springAnim);
+  dragging = true;
+  lastPointerAngle = pointerAngle(e);
+  wheelEl.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+
+wheelEl.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const a = pointerAngle(e);
+  let d = a - lastPointerAngle;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  lastPointerAngle = a;
+  setWheel(wheel + d);
+});
+
+function endDrag() {
+  if (!dragging) return;
+  dragging = false;
+  if ($('autocenter').checked) springBack();
+}
+wheelEl.addEventListener('pointerup', endDrag);
+wheelEl.addEventListener('pointercancel', endDrag);
+
+// ---------- Buttons ----------
+connectBtn.addEventListener('click', () => { if (!rx) connect(); });
+$('straight').addEventListener('click', springBack);
+$('sleep').addEventListener('click', () => {
+  if (!rx) { setStatus('Pas connecté'); return; }
+  if (confirm('Endormir le bateau ? Appuie sur son bouton pour le réveiller.')) send('Z');
+});
+
+update();
+</script>
+</body>
+</html>

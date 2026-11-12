@@ -61,21 +61,10 @@
   label input { width: 22px; height: 22px; accent-color: var(--green); }
   #sleep { margin-top: 18px; background: transparent; color: var(--ink); opacity: 0.55; font-size: 15px; padding: 8px 14px; }
 
-  .right { display: flex; align-items: center; gap: 10px; }
-  #bat { display: none; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; }
-  #bat.show { display: flex; }
-  .bat-body {
-    position: relative; width: 30px; height: 15px; border: 2px solid var(--ink); border-radius: 4px; padding: 1px;
-  }
-  .bat-body::after {
-    content: ""; position: absolute; right: -5px; top: 3px; width: 3px; height: 5px;
-    background: var(--ink); border-radius: 0 2px 2px 0;
-  }
-  #batFill { height: 100%; border-radius: 2px; background: var(--green); width: 0; transition: width .4s; }
-  #bat.low #batFill { background: var(--red); }
-  #bat.low { color: var(--red); }
-
   #setCenter { margin-top: 14px; background: var(--sun); color: var(--ink); box-shadow: 0 4px 0 #d9a93c; font-size: 16px; padding: 10px 18px; }
+  .center-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  #trimReset { margin-top: 14px; background: #dbeef6; color: var(--ink); font-size: 16px; padding: 10px 18px; }
+  #trimReset:active { background: #c3e2ef; }
   #setCenter:active { transform: translateY(2px); box-shadow: 0 2px 0 #d9a93c; }
 </style>
 </head>
@@ -83,13 +72,7 @@
 
 <header>
   <h1>Teuf-Teuf</h1>
-  <div class="right">
-    <div id="bat" title="Batterie du bateau">
-      <div class="bat-body"><div id="batFill"></div></div>
-      <span id="batText"></span>
-    </div>
-    <button id="connect">Connecter</button>
-  </div>
+  <button id="connect">Connecter</button>
 </header>
 <div id="status">Appuie sur Connecter, puis choisis TEUF TEUF BLEU</div>
 
@@ -125,7 +108,10 @@
   <label><input type="checkbox" id="autocenter" checked> Retour au centre</label>
 </div>
 
-<button id="setCenter">Réglage centre</button>
+<div class="center-row">
+  <button id="setCenter">Réglage centre</button>
+  <button id="trimReset">Remettre à zéro</button>
+</div>
 
 <button id="sleep">STOP</button>
 
@@ -139,7 +125,6 @@ const WHEEL_MAX = 135;  // how far the wheel turns each way (degrees)
 
 const NUS = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
-const TX  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), connectBtn = $('connect');
@@ -148,7 +133,6 @@ let device = null, rx = null;
 let wheel = 0;            // current wheel angle, -WHEEL_MAX..WHEEL_MAX
 let lastSent = null, pending = null, busy = false;
 const queue = [];         // commands that must all be sent, in order (trim, sleep…)
-let rxBuffer = '';
 
 function setStatus(t) { statusEl.textContent = t; }
 
@@ -167,12 +151,6 @@ async function connect() {
     const server = await device.gatt.connect();
     const svc = await server.getPrimaryService(NUS);
     rx = await svc.getCharacteristic(RX);
-    try {
-      const tx = await svc.getCharacteristic(TX);
-      tx.addEventListener('characteristicvaluechanged', onNotify);
-      await tx.startNotifications();
-    } catch (e) { /* steering still works without replies */ }
-    command('?');   // ask for the battery level
     connectBtn.textContent = 'Connecté';
     connectBtn.classList.add('on');
     setStatus('Prêt ! Tourne le volant');
@@ -188,33 +166,7 @@ function onDisconnect() {
   queue.length = 0;
   connectBtn.textContent = 'Connecter';
   connectBtn.classList.remove('on');
-  $('bat').classList.remove('show');
   setStatus('Bateau déconnecté. Appuie sur Connecter');
-}
-
-// ---------- Messages from the boat ----------
-function onNotify(e) {
-  rxBuffer += new TextDecoder().decode(e.target.value);
-  let i;
-  while ((i = rxBuffer.indexOf('\n')) >= 0) {
-    handleLine(rxBuffer.slice(0, i).trim());
-    rxBuffer = rxBuffer.slice(i + 1);
-  }
-}
-
-function handleLine(line) {
-  let m;
-  if ((m = line.match(/^Bat (-?\d+),(\d+)/))) showBattery(+m[1], +m[2]);
-}
-
-function showBattery(pct, mv) {
-  const el = $('bat');
-  if (pct < 0) { el.classList.remove('show'); return; }   // no divider wired
-  el.classList.add('show');
-  el.classList.toggle('low', pct <= 20);
-  $('batFill').style.width = Math.max(4, pct) + '%';
-  $('batText').textContent = pct + '%';
-  el.title = `Batterie : ${pct}% (${(mv / 1000).toFixed(2)} V)`;
 }
 
 
@@ -334,6 +286,14 @@ $('setCenter').addEventListener('click', () => {
   lastSent = CENTER;             // the boat is already at the new center
   $('wheelG').style.transform = 'rotate(0deg)';
   setStatus('Nouveau centre enregistré');
+});
+
+$('trimReset').addEventListener('click', () => {
+  if (needConnection()) return;
+  if (confirm('Remettre le centre d’origine ?')) {
+    command('T0');
+    setStatus('Centre remis à zéro');
+  }
 });
 
 update();
